@@ -1,0 +1,82 @@
+% First draft a Scale Object
+
+classdef objMidiArray
+    properties
+        % Must be provided
+        noteNums                    = [];
+        startTimes                  = [];
+        numQuarterNotes             = [];
+        tempo                       = 120;
+        amplitudes                  = [];
+        key                         = 'C';
+        fs                          = 44100;
+        patch
+        bell
+        clarinet
+        
+        % Defaults
+        noteDurationFraction        = 0.8;                                     % Duration of the beat the note is played for 
+        breathDurationFraction      = 0.2;                                     % Duration pf the beat that is silent
+        temperament                 = 'Equal';
+            
+        % Calculated
+        secondsPerQuarterNote                                               % The number of seconds in a quarterNote
+        noteDuration                                                        % Duration of the note portion in seconds
+        breathDuration                                                      % Duration of the breath portion in seconds
+        arrayNotes                  = objNote.empty;                        % Array of notes for the scale
+    end
+  
+    methods
+        function obj = objMidiArray(varargin)
+            
+            % Map the variable inputs to the class
+            if length(varargin) ~= 7
+                error('Must have 7 inputs')
+            end
+            obj.noteNums=varargin{1};
+            obj.startTimes=varargin{2};
+            obj.numQuarterNotes=varargin{3};
+            obj.tempo=varargin{4};
+            obj.amplitudes=varargin{5};
+            obj.key=varargin{6};
+            obj.patch=varargin{7};
+            
+            % Compute some constants based on inputs
+            obj.secondsPerQuarterNote       = 60/obj.tempo;                       
+            
+            % Walk through the offsets and build the scale
+            obj.bell = zeros(1,obj.fs*(obj.numQuarterNotes(end)*obj.noteDurationFraction*obj.secondsPerQuarterNote + obj.startTimes(end)));
+            for ia=1:(length(obj.noteNums))              
+                obj.noteDuration(ia)                = obj.noteDurationFraction*obj.secondsPerQuarterNote*obj.numQuarterNotes(ia);         % Duration of the note in seconds
+                obj.breathDuration(ia)              = obj.breathDurationFraction*obj.secondsPerQuarterNote*obj.numQuarterNotes(ia);         % Duration between notes
+                obj.arrayNotes(ia)                  = objNote(obj.noteNums(ia),  obj.temperament,...
+                                                      obj.key,  obj.startTimes(ia),   obj.startTimes(ia)+ ...
+                                                      obj.noteDuration(ia),   obj.amplitudes(ia));
+                %%%%%%%%%%
+%                 if obj.patch == 4
+%                     dur = obj.noteDuration(ia);
+%                     t = 0:1/obj.fs:dur;
+%                     t(end) = [];
+%                     constants.durationChord = dur;
+%                     constants.t = t;
+%                     constants.fs = obj.fs;
+%                     damp = 3;
+%                     fratio = 1000; 
+%                     d = 5;
+%                     decay = 1./exp(damp*t); 
+%                     amp = obj.amplitudes(ia);
+%                     fm = obj.arrayNotes(ia).frequency/fratio; 
+%                     F1 = oscillator(2, amp, constants).*decay;
+%                     F2 = oscillator(2, d, constants).*decay;
+%                     Fm = oscillator(fm, F2, constants);
+%                     lenVec = obj.fs*(sum(obj.noteDuration(1:ia-1))+sum(obj.breathDuration(1:ia-1)));
+%                     index = round(((lenVec+1:lenVec+obj.fs*obj.noteDuration(ia))));
+%                     obj.bell(index) = oscillatorFM(Fm+obj.arrayNotes(ia).frequency, F1, constants); % output oscillator
+%                 end 
+            end
+%             if obj.patch == 4
+%                 obj.bell = reshape(obj.bell',[1, size(obj.bell,1)*size(obj.bell,2)]);
+%             end
+        end
+    end
+end
