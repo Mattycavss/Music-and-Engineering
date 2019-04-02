@@ -5,7 +5,7 @@ clc; clear sound; clear all                                                % Cle
 format compact                                                             % reduce white space
 dbstop if error                                                            % add dynamic break point
 %% Inputs and constants: Choose the 4 sounds you want.
-midi_file = 'mario.mid';  
+midi_file = 'ROW.mid';  
 constants                              = confConstants;
 constants.BufferSize                   = 882;                                                    % Samples
 constants.SamplingRate                 = 44100;                                                  % Samples per Second
@@ -20,8 +20,6 @@ oscParams.oscAmpEnv.DecayTime          = .08;  %Decay time in seconds
 oscParams.oscAmpEnv.SustainLevel       = 0.7;  % Sustain level
 oscParams.oscAmpEnv.ReleaseTime        = .2;  % Time to release from sustain to zero
 %% Decode midi file, generate song, and play track
-song = decode_midi(midi_file)
-soundOut = generate_song(song)
+songInfo = decode_midi(midi_file);
 fprintf('Playing from file %s. Enjoy! \n', midi_file)
-sound(soundOut, constants.fs)
-
+play_notes(songInfo);
