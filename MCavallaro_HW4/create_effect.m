@@ -1,0 +1,123 @@
+function [] = create_effect(effect, input, constants)
+    % Initialize
+    amp = constants.amp;                                                    % Setting default amplitude from constants struct
+    dur = constants.duration;                                               % Setting up duration of soundSample
+    fs = constants.fs;                                                      % Setting up sampling frequency
+    t = constants.t;                                                        % Setting up time vector
+
+    % Switch-Case the effect to fill soundSample
+    switch effect
+        case {'compressor'}
+            threshold = 0.1;                                                % set threhsold to 0.1 to demonstrate clearly the effect of compression
+            slope = 0.5; 
+            avgLen = 500;
+            [soundSample, gainVec] = compressor(input, threshold, slope,...
+                avgLen);
+            disp('Compressor')
+            sound(soundSample,fs);
+            figure
+            plot(t, input(:,1), '-r', t, soundSample(:,1), '-b', t, gainVec(:,1), '-g')
+            legend('input','compressed','gain')
+            pause(1.2*dur)
+        case {'ringmod'}
+            freq = 500;
+            depth = 1;
+            soundSample = ring_modulator(input, freq, depth, constants);
+            disp('Ring Modulation')
+            soundsc(soundSample,fs);
+            pause(1.2*dur)
+        case {'stereotrem'}
+            lfo_type = 'sin';                                          % Can hear the square wave transition popping in output. Sin and Triangle are better
+            lfo_rate = 4;
+            stereo_lag = 100;
+            depth = 0.5;
+            soundSample = stereo_tremolo(input, lfo_type, lfo_rate, ...
+                stereo_lag, depth, constants);
+            disp('Stereo Tremolo')
+            soundsc(soundSample,fs);
+            pause(1.2*dur)
+        case {'distortion'}
+            gain = 30;
+            volume = 4;                                                     % set to 11 for deafness
+            tone = 0.65;
+            soundSample = distortion(input, gain, tone, constants);
+            disp('Distortion')
+            sound(soundSample/10*volume,fs);
+            pause(1.2*dur)
+            % plotting
+            gain = 1;
+            soundSample1 = distortion(input, gain, tone, constants);
+            gain = 15;
+            soundSample15 = distortion(input, gain, tone, constants);
+            gain = 30;
+            soundSample30 = distortion(input, gain, tone, constants);
+            figure
+            plot(t,soundSample30(:,1), '-r', t,soundSample15(:,1), '-g', t,soundSample1(:,1), '-b' )
+            legend('gain = 30','gain = 15','gain = 1')
+        case {'singletapdelay'}
+            delayTypes = ["slapback" "cavern" "tempo"];
+            disp('Single Tap Delay')
+            for cntType = 1:length(delayTypes)
+                fprintf('Delay type = %s \n', delayTypes(cntType))
+                switch delayTypes(cntType)
+                    case "slapback"
+                        depth = 1;
+                        delay = 80e-3;                                      % 100e-6 seconds up to 8 seconds
+                        fbgain = 0;
+                        soundSample = single_tap_delay(input, depth, delay, ...
+                        fbgain, constants);
+                    case "cavern"
+                        depth = 0.5;
+                        delay = 0.5; % up to 8 seconds
+                        fbgain = 0.2;
+                        soundSample = single_tap_delay(input, depth, delay, ...
+                        fbgain, constants);
+                    case "tempo"
+                        depth = 1;
+                        delay = 1; % up to 8 seconds
+                        fbgain = 0;
+                        soundSample = single_tap_delay(input, depth, delay, ...
+                        fbgain, constants);
+                    otherwise 
+                        error('invalid delay type') 
+                end
+                soundsc(soundSample,fs);                                            
+                pause(1.2*dur) 
+            end  
+        case {'flanger'}
+            depth = 0.75;
+            delay = 1000e-5; % 100e-6 to 100e-4
+            width = 100e-5; % 100e-9 to 100e-4
+            lfoRate = 1; % 0.05 to 5
+            [soundSample, fs] = flanger(input, depth, delay, width, lfoRate, constants);
+            disp('Flanger')
+            soundsc(soundSample,fs);
+            pause(1.2*dur)
+        case {'chorus'}
+            depth = 1;
+            delay = 30e-3; % 100e-6 to 100e-4
+            width = 2e-3; % 100e-9 to 100e-4
+            lfoRate = 1; % 0.05 to 5
+            soundSample = flanger(input, depth, delay, width, lfoRate, constants);
+            disp('Chorus')
+            soundsc(soundSample,fs);
+            pause(1.2*dur)
+        case {'envelopefilter'}
+            gain = 1.2;
+            threshold = 0.2;
+            numSamp = 100;
+            disp('Playing original for comparison with Envelope Filter')
+            soundsc(input,fs)
+            soundSample = envelope_filter(input, gain, threshold, numSamp);
+            pause(0.5*dur)
+            disp('Envelope Filter')
+            sound(soundSample,fs);
+            pause(1.2*dur)
+        case {'original'}
+            disp('Playing original for comparison')
+            soundsc(input,fs)
+            pause(0.8*dur)
+        otherwise
+            error('Invalid effect type')
+    end
+end
