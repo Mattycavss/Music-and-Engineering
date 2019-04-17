@@ -6,7 +6,6 @@ function [soundOut, fs] = flanger(input, depth, minDelay, widthTime, f, constant
     t(end) = [];
     delay = widthAmp*sin(w*t) + minDelay + widthAmp;
     delayInds = ceil(delay*fs);
-    plot(delayInds)
     delayOut = zeros(size(input));
     for ia = max(delayInds):(length(input))
         delayInd = delayInds(ia);
